@@ -2,91 +2,98 @@ namespace Blackjack;
 
 public class Game
 {
-  private readonly Guid _uuid = Guid.NewGuid();
-  private readonly Deck _dealer = new();
-  private Deck _deck = Deck.Generate();
-  private readonly Deck _player = new();
-  private int _cash = 1000;
-  private GameState _state = GameState.Idle;
+  public readonly Guid Uuid = Guid.NewGuid();
+  public readonly Deck Dealer = new();
+  public Deck Deck = Deck.Generate();
+  public readonly Deck Player = new();
+  public int Cash = 1000;
+  public GameState State = GameState.Idle;
   private int _bet = 10;
 
   public void Deal(int betDeal) {
     _bet = betDeal;
-    if (_state is GameState.Won or GameState.Lost or GameState.Tie)
-      _state = GameState.Idle;
+    if (State is GameState.Won or GameState.Lost or GameState.Tie)
+      State = GameState.Idle;
 
-    if (_state != GameState.Idle)
+    if (State != GameState.Idle)
       throw new InvalidOperationException("Cannot deal");
 
     if (_bet is < 0 or > 50)
       throw new InvalidOperationException(
         $"Cannot bet over the limit of 50 or under 0 given {_bet}");
 
-    if (_cash < _bet)
+    if (Cash < _bet)
       throw new InvalidOperationException(
-        $"Cannot bet more than the available cash {_cash}");
+        $"Cannot bet more than the available cash {Cash}");
 
-    if (_deck.Hand.Count < 18) {
-      _deck = Deck.Generate();
+    if (Deck.Hand.Count < 18) {
+      Deck = Deck.Generate();
     }
     
-    _dealer.Hand.Push(_deck.Hand.Pop());
-    _player.Hand.Push(_deck.Hand.Pop());
-    _player.Hand.Push(_deck.Hand.Pop());
+    Dealer.Hand.Push(Deck.Hand.Pop());
+    Player.Hand.Push(Deck.Hand.Pop());
+    Player.Hand.Push(Deck.Hand.Pop());
 
-    _state = GameState.InGame;
-    _cash -= _bet;
+    State = GameState.InGame;
+    Cash -= _bet;
 
-    var playerValue = _player.HandValue();
-    var dealerValue = _dealer.HandValue();
+    var playerValue = Player.HandValue();
+    var dealerValue = Dealer.HandValue();
 
     if (playerValue != 21 || dealerValue >= 10) return;
 
-    _state = GameState.Won;
-    _cash += 3 * _bet;
+    State = GameState.Won;
+    Cash += 3 * _bet;
   }
 
   public void Hit() {
-    if (_state != GameState.InGame)
+    if (State != GameState.InGame)
       throw new InvalidOperationException(
         "Cannot hit when no game is started.");
 
-    _player.Hand.Push(_deck.Hand.Pop());
-    var playerValue = _player.HandValue();
-    if (playerValue > 21) _state = GameState.Lost;
+    Player.Hand.Push(Deck.Hand.Pop());
+    var playerValue = Player.HandValue();
+    if (playerValue > 21) State = GameState.Lost;
+    else {
+      Hold();
+    }
   }
 
   public void Hold() {
-    if (_state != GameState.InGame)
+    if (State != GameState.InGame)
       throw new InvalidOperationException(
         "Cannot hit when no game is started.");
 
-    var playerValue = _player.HandValue();
-    var dealerValue = _dealer.HandValue();
+    var playerValue = Player.HandValue();
+    var dealerValue = Dealer.HandValue();
 
     while (dealerValue < 17 && dealerValue <= playerValue) {
-      _dealer.Hand.Push(_deck.Hand.Pop());
-      dealerValue = _dealer.HandValue();
+      Dealer.Hand.Push(Deck.Hand.Pop());
+      dealerValue = Dealer.HandValue();
     }
 
     if (playerValue == dealerValue) {
-      _state = GameState.Tie;
-      _cash += _bet;
+      State = GameState.Tie;
+      Cash += _bet;
     }
     else if (playerValue == 21) {
-      _state = GameState.Won;
-      _cash = 2 * _bet;
+      State = GameState.Won;
+      Cash = 2 * _bet;
     }
     else if (dealerValue > 21) {
-      _state = GameState.Won;
-      _cash = 2 * _bet;
+      State = GameState.Won;
+      Cash = 2 * _bet;
     }
     else if (playerValue > dealerValue) {
-      _state = GameState.Won;
-      _cash = 2 * _bet;
+      State = GameState.Won;
+      Cash = 2 * _bet;
     }
     else {
-      _state = GameState.Lost;
+      State = GameState.Lost;
     }
+  }
+
+  public override string ToString() {
+    return $"Game\nCash: {Cash}\nPlayer: {Player.HandValue()}\nDealer: {Dealer.HandValue()}\nState: {State}";
   }
 }

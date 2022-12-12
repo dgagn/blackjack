@@ -3,6 +3,7 @@ namespace Blackjack;
 public class Deck
 {
   public readonly Stack<Card> Hand = new();
+  private static readonly Random _random = new();
 
   public Deck() {
   }
@@ -40,8 +41,9 @@ public class Deck
     foreach (var rank in ranks)
     foreach (var _ in suits)
       cards.Push(new Card(rank));
-
-    return new Deck(cards);
+    var shuffled = new Stack<Card>(cards.OrderBy(x => _random.Next()));
+    
+    return new Deck(shuffled);
   }
 
   public int HandValue() {
